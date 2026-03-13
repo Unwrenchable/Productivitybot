@@ -1,0 +1,18 @@
+; ============================================================
+;  Slacker — Windows AutoPlay / AutoRun configuration
+;
+;  When this USB drive is inserted on Windows, AutoPlay will
+;  offer to "Start Slacker Productivity Bot" as an action.
+;
+;  NOTE: Windows Vista and later disable full AutoRun for USB
+;  drives by default (for security). AutoPlay still works —
+;  the user will see a prompt and can choose to start Slacker.
+;  On Windows XP / some enterprise setups, it may launch
+;  automatically without a prompt.
+; ============================================================
+
+[AutoRun]
+label=Slacker USB
+open=START.bat
+action=Start Slacker Productivity Bot
+icon=START.bat,0

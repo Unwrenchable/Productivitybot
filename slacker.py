@@ -10,6 +10,7 @@ Features
 * --widget: launches the Stealth Widget, a tiny always-on-top dashboard
   showing fake-but-convincing productivity metrics.
 * Fully configurable via config.json.
+* USB-portable: bundled dependencies in ./lib/ are used automatically.
 
 Usage
 -----
@@ -19,13 +20,23 @@ Usage
     python slacker.py --help
 """
 
+import os
+import sys
+
+# ---------------------------------------------------------------------------
+# USB portability: if a ./lib/ directory exists next to this script (populated
+# by setup_usb.py), add it to the front of sys.path so bundled dependencies
+# are found without needing pip install on the host machine.
+# ---------------------------------------------------------------------------
+_LIB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib")
+if os.path.isdir(_LIB_DIR) and _LIB_DIR not in sys.path:
+    sys.path.insert(0, _LIB_DIR)
+
 import argparse
 import json
 import logging
-import os
 import random
 import signal
-import sys
 import threading
 import time
 

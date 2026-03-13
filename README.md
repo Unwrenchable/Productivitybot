@@ -14,7 +14,46 @@
 | 📜 **Scroll nudge** | A subtle one-tick scroll prevents the screensaver |
 | ⌨️ **Shift key press** *(optional)* | Resets stubborn idle timers on some platforms |
 | 🪟 **Stealth Widget** | Always-on-top, semi-transparent overlay showing live fake productivity metrics |
+| 💾 **USB Ready** | Runs straight from a USB drive — plug in and go, no installation needed |
 | ⚙️ **Fully configurable** | Tweak everything via `config.json` or CLI flags |
+
+---
+
+## 💾 USB Quick-Start (plug in and go!)
+
+Slacker is designed to live on a USB drive and launch automatically the moment
+you plug it in. No installation required on the host computer — just Python.
+
+### Step 1 — One-time USB setup (do this at home / with internet)
+
+Copy the whole repo onto your USB drive, then run:
+
+```bash
+python setup_usb.py
+```
+
+This downloads all dependencies into a `lib/` folder **on the USB itself**, so the
+app is fully self-contained and never touches the host machine.
+
+### Step 2 — Plug in and launch
+
+| OS | How to start |
+|----|-------------|
+| **Windows** | Plug in → AutoPlay prompt → **"Start Slacker Productivity Bot"** — or double-click `START.bat` |
+| **macOS** | Double-click `START.command` in Finder (choose *Open with Terminal* if asked) |
+| **Linux** | Open a terminal on the USB and run `./START.sh` |
+
+Slacker will start immediately with the stealth widget visible.
+
+### How it works
+
+* **Bundled deps** — `setup_usb.py` puts `pyautogui`, `schedule`, and their
+  dependencies into `./lib/`. The launchers set `PYTHONPATH` to point there so
+  the host never needs `pip install`.
+* **Windows AutoPlay** — `autorun.inf` registers an AutoPlay action so Windows
+  prompts you the instant the drive is inserted.
+* **No write access needed** — Slacker only reads from the USB; logs go to the
+  terminal, nothing is written to the host machine.
 
 ---
 
@@ -56,6 +95,7 @@ at your monitor sees an active worker:
 - `tkinter` — included with most Python installations (the widget uses it)
 
 ```bash
+# Standard install (skip this if you used setup_usb.py — deps are already bundled)
 pip install -r requirements.txt
 ```
 
@@ -123,6 +163,24 @@ Example `config.json` with the widget always enabled:
         "position": "bottom-right"
     }
 }
+```
+
+---
+
+## File layout on the USB
+
+```
+Slacker/
+├── slacker.py          ← main bot
+├── widget.py           ← stealth overlay
+├── config.json         ← settings (edit this to customise)
+├── requirements.txt    ← dependency list
+├── setup_usb.py        ← one-time dep downloader (run at home)
+├── START.bat           ← Windows launcher / AutoPlay target
+├── START.command       ← macOS launcher
+├── START.sh            ← Linux launcher
+├── autorun.inf         ← Windows AutoPlay hook
+└── lib/                ← bundled deps (created by setup_usb.py)
 ```
 
 ---
