@@ -1,0 +1,8 @@
+{
+    "interval_seconds": 60,
+    "jitter_pixels": 10,
+    "enable_mouse_movement": true,
+    "enable_scroll": true,
+    "enable_key_press": false,
+    "log_level": "INFO"
+}
