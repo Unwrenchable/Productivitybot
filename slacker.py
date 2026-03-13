@@ -7,12 +7,15 @@ Features
   Slack, Teams, and similar tools.
 * Optionally scrolls or presses a harmless key (Shift) to prevent screen savers
   and OS idle timers.
+* --widget: launches the Stealth Widget, a tiny always-on-top dashboard
+  showing fake-but-convincing productivity metrics.
 * Fully configurable via config.json.
 
 Usage
 -----
-    python slacker.py                # run with defaults from config.json
-    python slacker.py --interval 30  # override interval (seconds)
+    python slacker.py                 # run with defaults from config.json
+    python slacker.py --interval 30   # override interval (seconds)
+    python slacker.py --widget        # also show the stealth widget
     python slacker.py --help
 """
 
@@ -23,6 +26,7 @@ import os
 import random
 import signal
 import sys
+import threading
 import time
 
 try:
@@ -53,6 +57,11 @@ DEFAULTS = {
     "enable_scroll": True,
     "enable_key_press": False,
     "log_level": "INFO",
+    "stealth_widget": {
+        "enabled": False,
+        "alpha": 0.88,
+        "position": "bottom-right",
+    },
 }
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
@@ -186,6 +195,25 @@ def parse_args(argv=None):
         metavar="FILE",
         help="Path to the JSON configuration file.",
     )
+    parser.add_argument(
+        "--widget",
+        action="store_true",
+        default=False,
+        help="Show the stealth productivity widget (always-on-top overlay).",
+    )
+    parser.add_argument(
+        "--widget-alpha",
+        type=float,
+        default=None,
+        metavar="0.0-1.0",
+        help="Widget opacity override (0.0 invisible → 1.0 opaque). Default: from config.json.",
+    )
+    parser.add_argument(
+        "--widget-position",
+        choices=["bottom-right", "bottom-left", "top-right", "top-left"],
+        default=None,
+        help="Screen corner for the widget. Default: from config.json.",
+    )
     return parser.parse_args(argv)
 
 
@@ -205,24 +233,48 @@ def main(argv=None):
     if args.key_press:
         cfg["enable_key_press"] = True
 
+    widget_cfg = cfg.setdefault("stealth_widget", dict(DEFAULTS["stealth_widget"]))
+    if args.widget:
+        widget_cfg["enabled"] = True
+    if args.widget_alpha is not None:
+        widget_cfg["alpha"] = args.widget_alpha
+    if args.widget_position is not None:
+        widget_cfg["position"] = args.widget_position
+
     setup_logging(cfg.get("log_level", "INFO"))
 
-    # Disable pyautogui's fail-safe (moving mouse to a corner) so the bot
-    # doesn't crash if the cursor drifts near a screen edge.
     pyautogui.FAILSAFE = True  # keep it on so the user can still emergency-stop
 
     signal.signal(signal.SIGINT, _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
 
     logging.info(
-        "Slacker started. Interval: %ss | Jitter: %dpx | Mouse: %s | Scroll: %s | Key: %s",
+        "Slacker started. Interval: %ss | Jitter: %dpx | Mouse: %s | Scroll: %s | Key: %s | Widget: %s",
         cfg["interval_seconds"],
         cfg["jitter_pixels"],
         cfg["enable_mouse_movement"],
         cfg["enable_scroll"],
         cfg["enable_key_press"],
+        widget_cfg["enabled"],
     )
     logging.info("Move your mouse to the top-left corner to emergency-stop.")
+
+    # Launch the stealth widget in a background thread (tkinter must own its thread)
+    if widget_cfg["enabled"]:
+        try:
+            from widget import run_widget  # noqa: PLC0415
+        except ImportError:
+            logging.warning("widget.py not found — skipping stealth widget.")
+        else:
+            t = threading.Thread(
+                target=run_widget,
+                kwargs={
+                    "alpha": widget_cfg.get("alpha", 0.88),
+                    "position": widget_cfg.get("position", "bottom-right"),
+                },
+                daemon=True,
+            )
+            t.start()
 
     # Run once immediately, then on schedule
     activity_tick(cfg)
